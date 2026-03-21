@@ -1,6 +1,10 @@
---//Official MK Hub\\--
+---===[OFFICIAL MK HUB]===---
 
-print "MK Hub Loaded!"
+--//Do not execute any MK Hub Clones this is the official MK Hub\\--
+
+--Siren Head: LEGACY Script--
+
+print 'MK Hub Loaded!'
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -120,76 +124,74 @@ local TeleportShopButton = TeleportsTab:CreateButton({
 
 -----==Teleports==-----
 
-        local shop = workspace:WaitForChild("Shop")
-        local torso = shop:WaitForChild("Torso")
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
 
-        hrp.CFrame = torso.CFrame + Vector3.new(0,3,0)
+local shop = workspace:FindFirstChild("Shop")
+
+if shop then
+    local torso = shop:FindFirstChild("Torso")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+
+    if torso and hrp then
+        hrp.CFrame = torso.CFrame
     end
-})
+end
 
 -----==Camera Locks==-----
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+
 local LocalPlayer = Players.LocalPlayer
+local AimlockEnabled = false
+local Connection
 
-local CameraTab = Window:CreateTab("Camera Locks", nil)
-
-local SirenConnection
-local CatConnection
-
-local function HardLock(targetHRP)
-    local cam = workspace.CurrentCamera
-    cam.CameraType = Enum.CameraType.Scriptable
-    cam.CFrame = CFrame.lookAt(cam.CFrame.Position, targetHRP.Position)
-end
-
-local LockSirenToggle = CameraTab:CreateToggle({
-    Name = "Lock Camera to Siren Head (NPC)",
-    CurrentValue = false,
-    Flag = "LockSiren",
-    Callback = function(Value)
-        if Value then
-            print("Siren Lock ON")
-            SirenConnection = RunService.RenderStepped:Connect(function()
-                local siren = workspace:WaitForChild("scps"):WaitForChild("real_siren")
-                local hrp = siren:FindFirstChild("HumanoidRootPart", true)
-                if hrp then
-                    HardLock(hrp)
-                end
-            end)
-        else
-            print("Siren Lock OFF")
-            if SirenConnection then
-                SirenConnection:Disconnect()
-                SirenConnection = nil
+local function getTarget()
+    local target = workspace:FindFirstChild("scps")
+    if target and target:FindFirstChild("real") then
+        local siren = target.real:FindFirstChild("siren_head")
+        if siren and siren:FindFirstChild("HumanoidRootPart") and siren:FindFirstChild("Humanoid") then
+            if siren.Humanoid.Health > 0 then
+                return siren.HumanoidRootPart
             end
-            workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
         end
     end
-})
+    return nil
+end
 
-local LockCatToggle = CameraTab:CreateToggle({
-    Name = "Lock Camera to Cartoon Cat (NPC)",
+CameraTab:CreateToggle({
+    Name = "Lock Camera to Siren Head (NPC)",
     CurrentValue = false,
-    Flag = "LockCat",
     Callback = function(Value)
-        if Value then
-            print("Cartoon Cat Lock ON")
-            CatConnection = RunService.RenderStepped:Connect(function()
-                local cat = workspace:WaitForChild("scps"):WaitForChild("real_cartoon_cat")
-                local hrp = cat:FindFirstChild("HumanoidRootPart", true)
-                if hrp then
-                    HardLock(hrp)
+        AimlockEnabled = Value
+
+        if AimlockEnabled then
+            LocalPlayer.CameraMinZoomDistance = 0.5
+            LocalPlayer.CameraMaxZoomDistance = 0.5
+
+            Camera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+
+            Connection = RunService.RenderStepped:Connect(function()
+                local targetPart = getTarget()
+
+                if targetPart then
+                    local camPos = Camera.CFrame.Position
+                    Camera.CFrame = CFrame.new(camPos, targetPart.Position)
+                else
+                    if Connection then
+                        Connection:Disconnect()
+                    end
                 end
             end)
         else
-            print("Cartoon Cat Lock OFF")
-            if CatConnection then
-                CatConnection:Disconnect()
-                CatConnection = nil
+            LocalPlayer.CameraMinZoomDistance = 0.5
+            LocalPlayer.CameraMaxZoomDistance = 12
+
+            if Connection then
+                Connection:Disconnect()
             end
-            workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
         end
     end
 })
